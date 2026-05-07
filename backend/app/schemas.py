@@ -35,3 +35,13 @@ class ExpenseOut(BaseModel):
     is_virtual:    bool = False
     source_id:     Optional[int] = None
     class Config: from_attributes = True
+
+
+class SnapshotOut(BaseModel):
+    id:           int
+    date:         date
+    total_value:  float
+    pea_value:    float
+    crypto_value: float
+    created_at:   Optional[datetime] = None
+    class Config: from_attributes = True
