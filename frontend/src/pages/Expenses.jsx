@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { getExpenses, addExpense, deleteExpense, updateExpense } from '../services/api'
+import { getExpenses, addExpense, deleteExpense, updateExpense, getBudgetStatus } from '../services/api'
 
 function fmt(n) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -202,16 +202,35 @@ function ExpenseCalendar({ year, month, expenses, onDelete }) {
   )
 }
 
+function budgetColor(percent) {
+  if (percent === undefined) return undefined
+  if (percent >= 100) return 'var(--red)'
+  if (percent >= 80)  return 'var(--yellow)'
+  return 'var(--green)'
+}
+
 export default function Expenses() {
   const now = new Date()
   const [year,      setYear]      = useState(now.getFullYear())
   const [month,     setMonth]     = useState(now.getMonth() + 1)
   const [expenses,  setExpenses]  = useState([])
+  const [budgetMap, setBudgetMap] = useState({})
   const [form,      setForm]      = useState(EMPTY_FORM)
   const [showForm,  setShowForm]  = useState(false)
   const [loading,   setLoading]   = useState(false)
 
-  useEffect(() => { fetchExpenses() }, [year, month])
+  useEffect(() => { fetchAll() }, [year, month])
+
+  async function fetchAll() {
+    const [expRes, budRes] = await Promise.all([
+      getExpenses(year, month),
+      getBudgetStatus(year, month).catch(() => ({ data: [] })),
+    ])
+    setExpenses(expRes.data)
+    const map = {}
+    for (const s of budRes.data) map[s.category] = s
+    setBudgetMap(map)
+  }
 
   async function fetchExpenses() {
     const res = await getExpenses(year, month)
@@ -225,14 +244,14 @@ export default function Expenses() {
       await addExpense({ ...form, amount: parseFloat(form.amount) })
       setForm(EMPTY_FORM)
       setShowForm(false)
-      await fetchExpenses()
+      await fetchAll()
     } finally { setLoading(false) }
   }
 
   async function handleDelete(id) {
     if (!confirm('Supprimer cette dépense ?')) return
     await deleteExpense(id)
-    await fetchExpenses()
+    await fetchAll()
   }
 
   function handleCategoryChange(cat) {
@@ -351,12 +370,32 @@ export default function Expenses() {
           ) : (
             Object.entries(summaryTree).map(([cat, subs]) => {
               const catTotal = Object.values(subs).reduce((s, v) => s + v, 0)
+              const bst = budgetMap[cat]
+              const color = bst ? budgetColor(bst.percent) : undefined
               return (
                 <div key={cat} style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem', alignItems: 'center' }}>
                     <span style={{ fontWeight: 600 }}>{cat}</span>
-                    <span style={{ fontWeight: 700 }}>{fmt(catTotal)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {bst && (
+                        <span style={{
+                          fontSize: '0.7rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10,
+                          background: `${color}22`, color, border: `1px solid ${color}55`,
+                        }}>
+                          {bst.percent}% ({fmt(bst.monthly_limit)})
+                        </span>
+                      )}
+                      <span style={{ fontWeight: 700, color: color || 'inherit' }}>{fmt(catTotal)}</span>
+                    </div>
                   </div>
+                  {bst && (
+                    <div style={{ background: 'var(--bg3)', borderRadius: 4, height: 4, overflow: 'hidden', margin: '4px 0 6px' }}>
+                      <div style={{
+                        height: '100%', width: `${Math.min(bst.percent, 100)}%`,
+                        background: color, borderRadius: 4, transition: 'width 0.4s',
+                      }} />
+                    </div>
+                  )}
                   {Object.entries(subs).map(([sub, amount]) => (
                     <div key={sub} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0 4px 12px', fontSize: '0.82rem' }}>
                       <span className="muted">› {sub}</span>

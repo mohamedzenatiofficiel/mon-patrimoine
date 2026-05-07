@@ -64,3 +64,39 @@ class SnapshotOut(BaseModel):
     crypto_value: float
     created_at:   Optional[datetime] = None
     class Config: from_attributes = True
+
+
+class BudgetCreate(BaseModel):
+    category:      str
+    monthly_limit: float
+
+class BudgetOut(BaseModel):
+    id:            int
+    category:      str
+    monthly_limit: float
+    created_at:    Optional[datetime] = None
+    updated_at:    Optional[datetime] = None
+    class Config: from_attributes = True
+
+class BudgetStatus(BaseModel):
+    category:      str
+    monthly_limit: float
+    spent:         float
+    percent:       float   # 0-100+
+    budget_id:     int
+
+class MonthlyIncomeCreate(BaseModel):
+    year:           int
+    month:          int
+    amount:         float
+    savings_target: Optional[float] = 30.0
+
+class MonthlyIncomeOut(BaseModel):
+    id:             int
+    year:           int
+    month:          int
+    amount:         float
+    savings_target: float
+    created_at:     Optional[datetime] = None
+    updated_at:     Optional[datetime] = None
+    class Config: from_attributes = True

@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from .database import engine, Base, SessionLocal
-from .models import Investment, Expense, PatrimonySnapshot, Income
-from .routers import investments, expenses, prices, snapshots, income as income_router
+from .models import Investment, Expense, PatrimonySnapshot, Budget, MonthlyIncome, Income
+from .routers import investments, expenses, prices, snapshots, budgets, income, monthly_income
 from datetime import date
 
 Base.metadata.create_all(bind=engine)
@@ -35,7 +35,9 @@ app.include_router(investments.router)
 app.include_router(expenses.router)
 app.include_router(prices.router)
 app.include_router(snapshots.router)
-app.include_router(income_router.router)
+app.include_router(budgets.router)
+app.include_router(income.router)
+app.include_router(monthly_income.router)
 
 @app.get("/api/dashboard")
 def dashboard():
