@@ -1,29 +1,28 @@
 from fastapi import APIRouter, HTTPException
-import yfinance as yf
 import requests
 
 router = APIRouter(prefix="/api/prices", tags=["prices"])
 
-@router.get("/{symbol}")
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+}
+
+def fetch_yahoo_price(symbol: str) -> float:
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=1d"
+    r = requests.get(url, headers=HEADERS, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    result = data.get("chart", {}).get("result")
+    if not result:
+        raise ValueError(f"Aucune donnée pour {symbol}")
+    price = result[0]["meta"]["regularMarketPrice"]
+    return float(price)
+
+@router.get("/{symbol:path}")
 def get_price(symbol: str):
     try:
-        ticker = yf.Ticker(symbol)
-        hist   = ticker.history(period="1d")
-        if hist.empty:
-            raise ValueError("No data")
-        price = float(hist["Close"].iloc[-1])
+        price = fetch_yahoo_price(symbol)
         return {"symbol": symbol, "price": price}
-    except Exception:
-        raise HTTPException(404, detail=f"Prix introuvable pour {symbol}")
-
-@router.get("/crypto/{symbol}")
-def get_crypto_price(symbol: str):
-    # Binance public API — pas d'authentification requise pour les prix
-    try:
-        url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol.upper()}USDT"
-        r   = requests.get(url, timeout=5)
-        r.raise_for_status()
-        data = r.json()
-        return {"symbol": symbol, "price": float(data["price"]), "currency": "USDT"}
-    except Exception:
-        raise HTTPException(404, detail=f"Crypto introuvable : {symbol}")
+    except Exception as e:
+        raise HTTPException(404, detail=f"Prix introuvable pour {symbol}: {str(e)}")

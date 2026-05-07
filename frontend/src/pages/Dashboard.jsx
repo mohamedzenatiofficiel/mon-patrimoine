@@ -96,29 +96,18 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Objectif */}
+        {/* Dépenses par catégorie */}
         <div className="card">
-          <h3 style={{ marginBottom: 16, fontSize: '0.95rem', color: 'var(--text2)' }}>Objectif revenus passifs</h3>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ color: 'var(--text2)', fontSize: '0.85rem' }}>Revenus passifs mensuels</span>
-            <span style={{ fontWeight: 700 }}>{fmt(monthlyPassive)}<span className="muted"> / {fmt(objective)}</span></span>
-          </div>
-          <div className="progress-wrap" style={{ marginBottom: 8 }}>
-            <div className="progress-fill" style={{ width: `${progressPct}%` }} />
-          </div>
-          <div style={{ textAlign: 'right', fontSize: '0.8rem', color: 'var(--accent2)' }}>{progressPct}% de l'objectif</div>
-
-          {expenseBreakdown.length > 0 && (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Dépenses par catégorie</div>
-              {expenseBreakdown.map(({ category, amount }) => (
-                <div key={category} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
-                  <span className="muted">{category}</span>
-                  <span>{fmt(amount)}</span>
-                </div>
-              ))}
-            </div>
+          <h3 style={{ marginBottom: 16, fontSize: '0.95rem', color: 'var(--text2)' }}>Dépenses ce mois — par catégorie</h3>
+          {expenseBreakdown.length === 0 ? (
+            <div className="empty">Aucune dépense ce mois</div>
+          ) : (
+            expenseBreakdown.map(({ category, amount }) => (
+              <div key={category} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
+                <span className="muted">{category}</span>
+                <span style={{ fontWeight: 600 }}>{fmt(amount)}</span>
+              </div>
+            ))
           )}
         </div>
       </div>

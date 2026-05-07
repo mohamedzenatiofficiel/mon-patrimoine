@@ -8,9 +8,9 @@ function fmt(n) {
 const EMPTY_FORM = { name: '', symbol: '', type: 'ETF', quantity: '', buy_price: '' }
 
 const POPULAR_ETFS = [
-  { label: 'ETF S&P 500 (Amundi)', symbol: 'LU1681048804.F' },
-  { label: 'ETF MSCI World',       symbol: 'IE00B4L5Y983.F' },
-  { label: 'ETF NASDAQ 100',       symbol: 'IE0032077012.F' },
+  { label: 'ETF S&P 500 (Amundi)',  symbol: '500.PA'  },
+  { label: 'ETF MSCI World (CW8)', symbol: 'CW8.PA'  },
+  { label: 'ETF NASDAQ 100 (LQQ)', symbol: 'LQQ.PA'  },
 ]
 
 export default function Investments() {
