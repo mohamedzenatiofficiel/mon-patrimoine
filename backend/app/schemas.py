@@ -16,6 +16,7 @@ class InvestmentOut(InvestmentCreate):
 
 class ExpenseCreate(BaseModel):
     category:     str
+    subcategory:  Optional[str] = None
     amount:       float
     date:         date
     description:  Optional[str] = ""
@@ -24,6 +25,7 @@ class ExpenseCreate(BaseModel):
 class ExpenseOut(BaseModel):
     id:            Optional[int] = None
     category:      str
+    subcategory:   Optional[str] = None
     amount:        float
     date:          date
     description:   Optional[str] = ""
