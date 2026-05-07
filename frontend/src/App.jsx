@@ -2,10 +2,12 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-do
 import Dashboard    from './pages/Dashboard'
 import Investments  from './pages/Investments'
 import Expenses     from './pages/Expenses'
+import Cashflow     from './pages/Cashflow'
 import './App.css'
 
 const NAV = [
   { to: '/',            icon: '⊞',  label: 'Dashboard'       },
+  { to: '/cashflow',    icon: '💶', label: 'Cashflow'        },
   { to: '/investments', icon: '📈', label: 'Investissements'  },
   { to: '/expenses',    icon: '💸', label: 'Dépenses'        },
 ]
@@ -39,9 +41,10 @@ export default function App() {
       <main className="page-content">
         <Routes>
           <Route path="/"            element={<Dashboard />}   />
+          <Route path="/cashflow"    element={<Cashflow />}    />
           <Route path="/investments" element={<Investments />} />
           <Route path="/expenses"    element={<Expenses />}    />
-<Route path="*"            element={<Navigate to="/" replace />} />
+          <Route path="*"            element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </BrowserRouter>
