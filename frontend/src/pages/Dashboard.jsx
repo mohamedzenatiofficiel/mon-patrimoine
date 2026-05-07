@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   XAxis, YAxis, CartesianGrid, Area, AreaChart,
@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [period, setPeriod]       = useState('3m')
   const [snapping, setSnapping]   = useState(false)
   const [snapMsg, setSnapMsg]     = useState(null)
+  const snapMsgTimeoutRef         = useRef(null)
 
   const loadSnapshots = useCallback((p) => {
     getSnapshots(p)
@@ -58,6 +59,10 @@ export default function Dashboard() {
     loadSnapshots(period)
   }, [period, loadSnapshots])
 
+  useEffect(() => () => {
+    if (snapMsgTimeoutRef.current) clearTimeout(snapMsgTimeoutRef.current)
+  }, [])
+
   const handleSnapshot = async () => {
     setSnapping(true)
     setSnapMsg(null)
@@ -69,7 +74,8 @@ export default function Dashboard() {
       setSnapMsg('Erreur lors du snapshot')
     } finally {
       setSnapping(false)
-      setTimeout(() => setSnapMsg(null), 3000)
+      if (snapMsgTimeoutRef.current) clearTimeout(snapMsgTimeoutRef.current)
+      snapMsgTimeoutRef.current = setTimeout(() => setSnapMsg(null), 3000)
     }
   }
 
