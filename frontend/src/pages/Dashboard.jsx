@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { getDashboard } from '../services/api'
+import { getDashboard, getCashflow } from '../services/api'
+import CashflowSankey from '../components/CashflowSankey'
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
@@ -14,14 +15,18 @@ function pct(a, b) {
 }
 
 export default function Dashboard() {
-  const [data, setData]     = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData]           = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [cashflowData, setCashflowData] = useState(null)
 
   useEffect(() => {
     getDashboard()
       .then(r => setData(r.data))
       .catch(() => setData(null))
       .finally(() => setLoading(false))
+    getCashflow()
+      .then(r => setCashflowData(r.data))
+      .catch(() => setCashflowData(null))
   }, [])
 
   if (loading) return <div className="empty">Chargement...</div>
@@ -110,6 +115,16 @@ export default function Dashboard() {
             ))
           )}
         </div>
+      </div>
+
+      {/* Cashflow Sankey */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <h3 style={{ marginBottom: 16, fontSize: '0.95rem', color: 'var(--text2)' }}>Cashflow mensuel</h3>
+        {cashflowData && cashflowData.nodes.length > 1 ? (
+          <CashflowSankey data={cashflowData} height={380} />
+        ) : (
+          <div className="empty">Aucune dépense ce mois</div>
+        )}
       </div>
     </div>
   )
