@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 from .database import engine, Base, SessionLocal
-from .models import Investment, Expense, PatrimonySnapshot, Budget, MonthlyIncome
-from .routers import investments, expenses, prices, snapshots, budgets, income
+from .models import Investment, Expense, PatrimonySnapshot, Budget, MonthlyIncome, Income
+from .routers import investments, expenses, prices, snapshots, budgets, income, monthly_income
 from datetime import date
 
 Base.metadata.create_all(bind=engine)
@@ -37,6 +37,7 @@ app.include_router(prices.router)
 app.include_router(snapshots.router)
 app.include_router(budgets.router)
 app.include_router(income.router)
+app.include_router(monthly_income.router)
 
 @app.get("/api/dashboard")
 def dashboard():
@@ -102,7 +103,6 @@ def cashflow():
         month_start = date(now.year, now.month, 1)
 
         exps = db.query(Expense).filter(Expense.date >= month_start).all()
-
         recurring_prev = db.query(Expense).filter(
             Expense.is_recurring == True,
             or_(
@@ -113,15 +113,14 @@ def cashflow():
                 )
             )
         ).all()
-
         all_exps = list(exps) + list(recurring_prev)
 
-        if not all_exps:
-            return {"nodes": [], "links": [], "total": 0}
+        incomes = db.query(Income).all()
+        salary_entry = next((i for i in incomes if i.source_type == "salary"), None)
+        savings_entries = [i for i in incomes if i.source_type in ("livret_a", "ldd")]
 
         cat_totals: dict[str, float] = {}
         subcat_totals: dict[tuple, float] = {}
-
         for e in all_exps:
             cat = e.category
             sub = e.subcategory
@@ -130,16 +129,52 @@ def cashflow():
                 key = (cat, sub)
                 subcat_totals[key] = subcat_totals.get(key, 0) + e.amount
 
-        total = sum(cat_totals.values())
+        expense_total = sum(cat_totals.values())
+
+        if salary_entry:
+            # 4-level Sankey: Salaire → Budget + Savings → Categories → Subcategories
+            nodes = [{"name": "Salaire"}, {"name": "Budget"}]
+            salary_idx = 0
+            budget_idx = 1
+
+            savings_node_idx: dict[int, int] = {}
+            for s in savings_entries:
+                savings_node_idx[s.id] = len(nodes)
+                nodes.append({"name": s.label})
+
+            cat_idx: dict[str, int] = {}
+            subcat_idx: dict[tuple, int] = {}
+            for cat in sorted(cat_totals.keys()):
+                cat_idx[cat] = len(nodes)
+                nodes.append({"name": cat})
+            for (cat, sub) in sorted(subcat_totals.keys()):
+                key = (cat, sub)
+                if key not in subcat_idx:
+                    subcat_idx[key] = len(nodes)
+                    nodes.append({"name": sub})
+
+            links = []
+            links.append({"source": salary_idx, "target": budget_idx, "value": round(expense_total, 2)})
+            for s in savings_entries:
+                links.append({"source": salary_idx, "target": savings_node_idx[s.id], "value": round(s.amount, 2)})
+            for cat, amount in cat_totals.items():
+                links.append({"source": budget_idx, "target": cat_idx[cat], "value": round(amount, 2)})
+            for (cat, sub), amount in subcat_totals.items():
+                links.append({"source": cat_idx[cat], "target": subcat_idx[(cat, sub)], "value": round(amount, 2)})
+
+            total = salary_entry.amount
+            return {"nodes": nodes, "links": links, "total": round(total, 2), "salary": round(salary_entry.amount, 2)}
+
+        # Fallback: no salary — Budget → Categories → Subcategories
+        if not all_exps:
+            return {"nodes": [], "links": [], "total": 0}
 
         nodes = [{"name": "Budget"}]
-        cat_idx: dict[str, int] = {}
-        subcat_idx: dict[tuple, int] = {}
-
+        cat_idx = {}
+        subcat_idx = {}
         for cat in sorted(cat_totals.keys()):
             cat_idx[cat] = len(nodes)
             nodes.append({"name": cat})
-
         for (cat, sub) in sorted(subcat_totals.keys()):
             key = (cat, sub)
             if key not in subcat_idx:
@@ -147,14 +182,12 @@ def cashflow():
                 nodes.append({"name": sub})
 
         links = []
-
         for cat, amount in cat_totals.items():
             links.append({"source": 0, "target": cat_idx[cat], "value": round(amount, 2)})
-
         for (cat, sub), amount in subcat_totals.items():
             links.append({"source": cat_idx[cat], "target": subcat_idx[(cat, sub)], "value": round(amount, 2)})
 
-        return {"nodes": nodes, "links": links, "total": round(total, 2)}
+        return {"nodes": nodes, "links": links, "total": round(expense_total, 2)}
     finally:
         db.close()
 

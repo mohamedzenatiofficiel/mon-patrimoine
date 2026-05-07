@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   getBudgets, upsertBudget, deleteBudget, getBudgetStatus,
-  getIncome, upsertIncome,
+  getMonthlyIncome, upsertMonthlyIncome,
 } from '../services/api'
 
 function fmt(n) {
@@ -72,7 +72,7 @@ export default function BudgetPage() {
     const [b, s, i] = await Promise.all([
       getBudgets(),
       getBudgetStatus(year, month),
-      getIncome(year, month),
+      getMonthlyIncome(year, month),
     ])
     setBudgets(b.data)
     setStatuses(s.data)
@@ -101,7 +101,7 @@ export default function BudgetPage() {
 
   async function handleSaveIncome(e) {
     e.preventDefault()
-    await upsertIncome({
+    await upsertMonthlyIncome({
       year, month,
       amount: parseFloat(incomeForm.amount),
       savings_target: parseFloat(incomeForm.savings_target),

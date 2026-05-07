@@ -25,8 +25,13 @@ export const updateBudget    = (id, data)     => api.put(`/budgets/${id}`, data)
 export const deleteBudget    = (id)           => api.delete(`/budgets/${id}`)
 export const getBudgetStatus = (year, month)  => api.get('/budgets/status', { params: { year, month } })
 
-export const getIncome       = (year, month)  => api.get('/income', { params: { year, month } })
-export const upsertIncome    = (data)         => api.post('/income', data)
-export const deleteIncome    = (id)           => api.delete(`/income/${id}`)
+export const getIncome       = ()       => api.get('/income')
+export const addIncome       = (data)   => api.post('/income', data)
+export const updateIncome    = (id, d)  => api.put(`/income/${id}`, d)
+export const deleteIncome    = (id)     => api.delete(`/income/${id}`)
+
+export const getMonthlyIncome    = (year, month)  => api.get('/monthly-income', { params: { year, month } })
+export const upsertMonthlyIncome = (data)         => api.post('/monthly-income', data)
+export const deleteMonthlyIncome = (id)           => api.delete(`/monthly-income/${id}`)
 
 export default api

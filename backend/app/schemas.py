@@ -37,6 +37,25 @@ class ExpenseOut(BaseModel):
     class Config: from_attributes = True
 
 
+class IncomeCreate(BaseModel):
+    label:       str
+    source_type: str  # salary | livret_a | ldd
+    amount:      float
+
+class IncomeUpdate(BaseModel):
+    label:       Optional[str] = None
+    source_type: Optional[str] = None
+    amount:      Optional[float] = None
+
+class IncomeOut(BaseModel):
+    id:          int
+    label:       str
+    source_type: str
+    amount:      float
+    created_at:  Optional[datetime] = None
+    class Config: from_attributes = True
+
+
 class SnapshotOut(BaseModel):
     id:           int
     date:         date

@@ -2,6 +2,15 @@ from sqlalchemy import Boolean, Column, Integer, String, Float, Date, DateTime, 
 from sqlalchemy.sql import func
 from .database import Base
 
+class Income(Base):
+    __tablename__ = "incomes"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    label       = Column(String, nullable=False)
+    source_type = Column(String, nullable=False)  # salary | livret_a | ldd
+    amount      = Column(Float, nullable=False)
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
+
 class Investment(Base):
     __tablename__ = "investments"
 
