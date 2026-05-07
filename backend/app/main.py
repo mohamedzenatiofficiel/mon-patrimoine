@@ -91,6 +91,71 @@ def dashboard():
     finally:
         db.close()
 
+@app.get("/api/cashflow")
+def cashflow():
+    from sqlalchemy import and_, extract, or_
+    db: Session = SessionLocal()
+    try:
+        now = date.today()
+        month_start = date(now.year, now.month, 1)
+
+        exps = db.query(Expense).filter(Expense.date >= month_start).all()
+
+        recurring_prev = db.query(Expense).filter(
+            Expense.is_recurring == True,
+            or_(
+                extract("year", Expense.date) < now.year,
+                and_(
+                    extract("year", Expense.date) == now.year,
+                    extract("month", Expense.date) < now.month,
+                )
+            )
+        ).all()
+
+        all_exps = list(exps) + list(recurring_prev)
+
+        if not all_exps:
+            return {"nodes": [], "links": [], "total": 0}
+
+        cat_totals: dict[str, float] = {}
+        subcat_totals: dict[tuple, float] = {}
+
+        for e in all_exps:
+            cat = e.category
+            sub = e.subcategory
+            cat_totals[cat] = cat_totals.get(cat, 0) + e.amount
+            if sub and sub.strip() != cat.strip():
+                key = (cat, sub)
+                subcat_totals[key] = subcat_totals.get(key, 0) + e.amount
+
+        total = sum(cat_totals.values())
+
+        nodes = [{"name": "Budget"}]
+        cat_idx: dict[str, int] = {}
+        subcat_idx: dict[tuple, int] = {}
+
+        for cat in sorted(cat_totals.keys()):
+            cat_idx[cat] = len(nodes)
+            nodes.append({"name": cat})
+
+        for (cat, sub) in sorted(subcat_totals.keys()):
+            key = (cat, sub)
+            if key not in subcat_idx:
+                subcat_idx[key] = len(nodes)
+                nodes.append({"name": sub})
+
+        links = []
+
+        for cat, amount in cat_totals.items():
+            links.append({"source": 0, "target": cat_idx[cat], "value": round(amount, 2)})
+
+        for (cat, sub), amount in subcat_totals.items():
+            links.append({"source": cat_idx[cat], "target": subcat_idx[(cat, sub)], "value": round(amount, 2)})
+
+        return {"nodes": nodes, "links": links, "total": round(total, 2)}
+    finally:
+        db.close()
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}

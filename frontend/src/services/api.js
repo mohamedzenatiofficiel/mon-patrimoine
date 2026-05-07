@@ -14,6 +14,7 @@ export const deleteExpense   = (id)     => api.delete(`/expenses/${id}`)
 
 export const getPrice        = (symbol) => api.get(`/prices/${symbol}`)
 export const getDashboard    = ()       => api.get('/dashboard')
+export const getCashflow     = ()       => api.get('/cashflow')
 
 export const getSnapshots    = (period) => api.get('/snapshots', { params: { period } })
 export const createSnapshot  = ()       => api.post('/snapshots')

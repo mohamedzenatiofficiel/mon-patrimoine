@@ -3,15 +3,17 @@ from sqlalchemy.orm import Session
 from datetime import date, timedelta
 from typing import List, Optional
 import requests
+import logging
 
 from ..database import get_db
 from ..models import Investment, PatrimonySnapshot
 from ..schemas import SnapshotOut
 
 router = APIRouter(prefix="/api/snapshots", tags=["snapshots"])
+logger = logging.getLogger(__name__)
 
 YAHOO_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0",
     "Accept": "application/json",
 }
 
@@ -26,7 +28,7 @@ def _fetch_price(symbol: str) -> Optional[float]:
         if result:
             return float(result[0]["meta"]["regularMarketPrice"])
     except Exception:
-        pass
+        logger.warning("Failed to fetch market price for symbol '%s'", symbol, exc_info=True)
     return None
 
 

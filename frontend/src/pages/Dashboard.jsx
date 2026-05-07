@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart,
+  XAxis, YAxis, CartesianGrid, Area, AreaChart,
 } from 'recharts'
-import { getDashboard, getSnapshots, createSnapshot } from '../services/api'
+import { getDashboard, getSnapshots, createSnapshot, getCashflow } from '../services/api'
+import CashflowSankey from '../components/CashflowSankey'
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
@@ -31,10 +32,13 @@ const PERIODS = [
 export default function Dashboard() {
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
+  const [cashflowData, setCashflowData] = useState(null)
   const [snapshots, setSnapshots] = useState([])
   const [period, setPeriod]       = useState('3m')
   const [snapping, setSnapping]   = useState(false)
   const [snapMsg, setSnapMsg]     = useState(null)
+  const [snapMsgType, setSnapMsgType] = useState(null)
+  const snapMsgTimeoutRef         = useRef(null)
 
   const loadSnapshots = useCallback((p) => {
     getSnapshots(p)
@@ -47,24 +51,38 @@ export default function Dashboard() {
       .then(r => setData(r.data))
       .catch(() => setData(null))
       .finally(() => setLoading(false))
+    getCashflow()
+      .then(r => setCashflowData(r.data))
+      .catch(() => setCashflowData(null))
   }, [])
 
   useEffect(() => {
     loadSnapshots(period)
   }, [period, loadSnapshots])
 
+  useEffect(() => () => {
+    if (snapMsgTimeoutRef.current) clearTimeout(snapMsgTimeoutRef.current)
+  }, [])
+
   const handleSnapshot = async () => {
     setSnapping(true)
     setSnapMsg(null)
+    setSnapMsgType(null)
     try {
       await createSnapshot()
       setSnapMsg('Snapshot enregistré !')
+      setSnapMsgType('success')
       loadSnapshots(period)
     } catch {
       setSnapMsg('Erreur lors du snapshot')
+      setSnapMsgType('error')
     } finally {
       setSnapping(false)
-      setTimeout(() => setSnapMsg(null), 3000)
+      if (snapMsgTimeoutRef.current) clearTimeout(snapMsgTimeoutRef.current)
+      snapMsgTimeoutRef.current = setTimeout(() => {
+        setSnapMsg(null)
+        setSnapMsgType(null)
+      }, 3000)
     }
   }
 
@@ -74,9 +92,6 @@ export default function Dashboard() {
   const pea             = data?.pea_value         ?? 0
   const crypto          = data?.crypto_value      ?? 0
   const monthlyExpenses = data?.monthly_expenses  ?? 0
-  const monthlyPassive  = data?.monthly_passive   ?? 0
-  const objective       = data?.objective         ?? 500
-  const progressPct     = Math.min((monthlyPassive / objective) * 100, 100).toFixed(1)
 
   const pieData = [
     { name: 'PEA', value: pea },
@@ -182,7 +197,7 @@ export default function Dashboard() {
               {snapping ? '...' : '📸 Snapshot'}
             </button>
             {snapMsg && (
-              <span style={{ fontSize: '0.8rem', color: snapMsg.startsWith('Erreur') ? '#ef4444' : '#10b981' }}>
+              <span style={{ fontSize: '0.8rem', color: snapMsgType === 'error' ? '#ef4444' : '#10b981' }}>
                 {snapMsg}
               </span>
             )}
@@ -262,6 +277,16 @@ export default function Dashboard() {
             ))
           )}
         </div>
+      </div>
+
+      {/* Cashflow Sankey */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <h3 style={{ marginBottom: 16, fontSize: '0.95rem', color: 'var(--text2)' }}>Cashflow mensuel</h3>
+        {cashflowData && cashflowData.nodes.length > 1 ? (
+          <CashflowSankey data={cashflowData} height={380} />
+        ) : (
+          <div className="empty">Aucune dépense ce mois</div>
+        )}
       </div>
     </div>
   )
