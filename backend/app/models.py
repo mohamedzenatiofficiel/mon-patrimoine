@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, Float, Date, DateTime
+from sqlalchemy import Boolean, Column, Integer, String, Float, Date, DateTime, UniqueConstraint
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -36,3 +36,26 @@ class PatrimonySnapshot(Base):
     pea_value    = Column(Float, nullable=False, default=0.0)
     crypto_value = Column(Float, nullable=False, default=0.0)
     created_at   = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Budget(Base):
+    __tablename__ = "budgets"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    category      = Column(String, nullable=False, unique=True)
+    monthly_limit = Column(Float, nullable=False)
+    created_at    = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at    = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class MonthlyIncome(Base):
+    __tablename__ = "monthly_income"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    year           = Column(Integer, nullable=False)
+    month          = Column(Integer, nullable=False)
+    amount         = Column(Float, nullable=False)
+    savings_target = Column(Float, default=30.0)  # percentage target
+    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at     = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (UniqueConstraint("year", "month", name="uq_income_year_month"),)
