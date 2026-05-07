@@ -6,13 +6,34 @@ function fmt(n) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 }
 
-const CATEGORIES = ['Loyer / Famille', 'Courses / Alimentation', 'Loisirs', 'Transport', 'Abonnements', 'Santé', 'Autre']
+const CATEGORY_TREE = {
+  'Vie quotidienne': ['Courses', 'Restaurants', 'Livraison repas', 'Café / Snacks'],
+  'Investissement mensuel': ['Crypto', 'PEA', 'Assurance-vie', 'Livret A / LEP', 'SCPI', 'Actions'],
+  'Abonnement': ['Sport / Salle', 'Streaming', 'Téléphone', 'Internet', 'Autres abonnements'],
+  'Logement': ['Loyer', 'Charges', 'Assurance habitation', 'Travaux'],
+  'Transport': ['Carburant', 'Transport en commun', 'Taxi / VTC', 'Parking', 'Entretien véhicule'],
+  'Santé': ['Médecin', 'Pharmacie', 'Mutuelle', 'Optique'],
+  'Loisirs': ['Voyage', 'Shopping', 'Cinéma / Sorties', 'Jeux vidéo', 'Livres / Culture'],
+  'Famille': ['Enfants', 'Cadeaux', 'Aide familiale'],
+  'Autre': ['Autre'],
+}
+
+const CATEGORIES = Object.keys(CATEGORY_TREE)
 
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
-const EMPTY_FORM = { category: CATEGORIES[0], amount: '', date: new Date().toISOString().split('T')[0], description: '' }
+const DEFAULT_CATEGORY = CATEGORIES[0]
+const DEFAULT_SUBCATEGORY = CATEGORY_TREE[DEFAULT_CATEGORY][0]
+
+const EMPTY_FORM = {
+  category: DEFAULT_CATEGORY,
+  subcategory: DEFAULT_SUBCATEGORY,
+  amount: '',
+  date: new Date().toISOString().split('T')[0],
+  description: ''
+}
 
 function buildCalendarDays(year, month) {
   const firstDay = new Date(year, month - 1, 1)
@@ -163,6 +184,9 @@ function ExpenseCalendar({ year, month, expenses, onDelete }) {
               <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--bg3)', borderRadius: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{exp.category}</span>
+                  {exp.subcategory && (
+                    <span style={{ color: 'var(--accent)', fontSize: '0.78rem', marginLeft: 6 }}>› {exp.subcategory}</span>
+                  )}
                   {exp.description && (
                     <span style={{ color: 'var(--text3)', fontSize: '0.8rem', marginLeft: 8 }}>{exp.description}</span>
                   )}
@@ -211,13 +235,27 @@ export default function Expenses() {
     await fetchExpenses()
   }
 
+  function handleCategoryChange(cat) {
+    setForm(f => ({ ...f, category: cat, subcategory: CATEGORY_TREE[cat]?.[0] || '' }))
+  }
+
   const total = expenses.reduce((s, e) => s + e.amount, 0)
 
-  // Group by category for chart
+  // Group by main category for chart
   const byCategory = CATEGORIES.map(cat => ({
-    name: cat.split('/')[0].trim(),
+    name: cat,
     montant: expenses.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0)
   })).filter(c => c.montant > 0)
+
+  // Group by category then subcategory for summary
+  const summaryTree = {}
+  expenses.forEach(exp => {
+    if (!summaryTree[exp.category]) summaryTree[exp.category] = {}
+    const sub = exp.subcategory || '—'
+    summaryTree[exp.category][sub] = (summaryTree[exp.category][sub] || 0) + exp.amount
+  })
+
+  const subcats = CATEGORY_TREE[form.category] || []
 
   return (
     <div>
@@ -256,8 +294,14 @@ export default function Expenses() {
             <div className="form-grid" style={{ marginBottom: 14 }}>
               <div className="form-group">
                 <label>Catégorie</label>
-                <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                <select value={form.category} onChange={e => handleCategoryChange(e.target.value)}>
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Sous-catégorie</label>
+                <select value={form.subcategory} onChange={e => setForm(f => ({ ...f, subcategory: e.target.value }))}>
+                  {subcats.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div className="form-group">
@@ -281,14 +325,14 @@ export default function Expenses() {
       )}
 
       <div className="grid-2">
-        {/* Chart */}
+        {/* Chart by main category */}
         <div className="card">
           <h3 style={{ marginBottom: 16, fontSize: '0.95rem', color: 'var(--text2)' }}>Par catégorie</h3>
           {byCategory.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={byCategory} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <BarChart data={byCategory} margin={{ top: 0, right: 0, bottom: 40, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="name" tick={{ fill: 'var(--text3)', fontSize: 11 }} />
+                <XAxis dataKey="name" tick={{ fill: 'var(--text3)', fontSize: 10 }} angle={-30} textAnchor="end" interval={0} />
                 <YAxis tick={{ fill: 'var(--text3)', fontSize: 11 }} tickFormatter={v => `${v}€`} />
                 <Tooltip formatter={v => fmt(v)} contentStyle={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8 }} />
                 <Bar dataKey="montant" fill="var(--accent)" radius={[4,4,0,0]} />
@@ -299,18 +343,29 @@ export default function Expenses() {
           )}
         </div>
 
-        {/* Summary by category */}
+        {/* Hierarchical summary by category > subcategory */}
         <div className="card">
           <h3 style={{ marginBottom: 16, fontSize: '0.95rem', color: 'var(--text2)' }}>Résumé</h3>
-          {byCategory.length === 0 ? (
+          {Object.keys(summaryTree).length === 0 ? (
             <div className="empty">Aucune dépense ce mois</div>
           ) : (
-            byCategory.map(c => (
-              <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
-                <span className="muted">{c.name}</span>
-                <span style={{ fontWeight: 600 }}>{fmt(c.montant)}</span>
-              </div>
-            ))
+            Object.entries(summaryTree).map(([cat, subs]) => {
+              const catTotal = Object.values(subs).reduce((s, v) => s + v, 0)
+              return (
+                <div key={cat} style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
+                    <span style={{ fontWeight: 600 }}>{cat}</span>
+                    <span style={{ fontWeight: 700 }}>{fmt(catTotal)}</span>
+                  </div>
+                  {Object.entries(subs).map(([sub, amount]) => (
+                    <div key={sub} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0 4px 12px', fontSize: '0.82rem' }}>
+                      <span className="muted">› {sub}</span>
+                      <span style={{ color: 'var(--text2)' }}>{fmt(amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )
+            })
           )}
         </div>
       </div>
@@ -327,6 +382,7 @@ export default function Expenses() {
                 <tr>
                   <th>Date</th>
                   <th>Catégorie</th>
+                  <th>Sous-catégorie</th>
                   <th>Description</th>
                   <th>Montant</th>
                   <th></th>
@@ -337,6 +393,7 @@ export default function Expenses() {
                   <tr key={exp.id}>
                     <td className="muted">{new Date(exp.date).toLocaleDateString('fr-FR')}</td>
                     <td>{exp.category}</td>
+                    <td className="muted">{exp.subcategory || '—'}</td>
                     <td className="muted">{exp.description || '—'}</td>
                     <td style={{ fontWeight: 600 }}>{fmt(exp.amount)}</td>
                     <td>

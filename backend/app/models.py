@@ -18,6 +18,7 @@ class Expense(Base):
 
     id            = Column(Integer, primary_key=True, index=True)
     category      = Column(String, nullable=False)
+    subcategory   = Column(String, nullable=True)
     amount        = Column(Float,  nullable=False)
     date          = Column(Date,   nullable=False)
     description   = Column(String, default="")

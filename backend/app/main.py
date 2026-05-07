@@ -18,6 +18,8 @@ with engine.connect() as _conn:
         _conn.execute(text("ALTER TABLE expenses ADD COLUMN is_recurring BOOLEAN NOT NULL DEFAULT 0"))
     if "recurring_day" not in _existing:
         _conn.execute(text("ALTER TABLE expenses ADD COLUMN recurring_day INTEGER"))
+    if "subcategory" not in _existing:
+        _conn.execute(text("ALTER TABLE expenses ADD COLUMN subcategory VARCHAR"))
     _conn.commit()
 
 app = FastAPI(title="Mon Patrimoine API", version="1.0.0")
