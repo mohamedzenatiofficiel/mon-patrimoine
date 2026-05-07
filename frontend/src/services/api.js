@@ -19,4 +19,9 @@ export const getCashflow     = ()       => api.get('/cashflow')
 export const getSnapshots    = (period) => api.get('/snapshots', { params: { period } })
 export const createSnapshot  = ()       => api.post('/snapshots')
 
+export const getIncome       = ()       => api.get('/income')
+export const addIncome       = (data)   => api.post('/income', data)
+export const updateIncome    = (id, d)  => api.put(`/income/${id}`, d)
+export const deleteIncome    = (id)     => api.delete(`/income/${id}`)
+
 export default api
