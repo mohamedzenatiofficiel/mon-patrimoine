@@ -8,11 +8,11 @@ from typing import List
 router = APIRouter(prefix="/api/income", tags=["income"])
 
 
-@router.get("/", response_model=List[IncomeOut])
+@router.get("", response_model=List[IncomeOut])
 def list_income(db: Session = Depends(get_db)):
     return db.query(Income).all()
 
-@router.post("/", response_model=IncomeOut, status_code=201)
+@router.post("", response_model=IncomeOut, status_code=201)
 def create_income(body: IncomeCreate, db: Session = Depends(get_db)):
     entry = Income(**body.model_dump())
     db.add(entry)
@@ -38,3 +38,4 @@ def delete_income(income_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Income not found")
     db.delete(entry)
     db.commit()
+    return None
