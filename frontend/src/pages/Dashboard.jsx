@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [period, setPeriod]       = useState('3m')
   const [snapping, setSnapping]   = useState(false)
   const [snapMsg, setSnapMsg]     = useState(null)
+  const [snapMsgType, setSnapMsgType] = useState(null)
   const snapMsgTimeoutRef         = useRef(null)
 
   const loadSnapshots = useCallback((p) => {
@@ -66,16 +67,22 @@ export default function Dashboard() {
   const handleSnapshot = async () => {
     setSnapping(true)
     setSnapMsg(null)
+    setSnapMsgType(null)
     try {
       await createSnapshot()
       setSnapMsg('Snapshot enregistré !')
+      setSnapMsgType('success')
       loadSnapshots(period)
     } catch {
       setSnapMsg('Erreur lors du snapshot')
+      setSnapMsgType('error')
     } finally {
       setSnapping(false)
       if (snapMsgTimeoutRef.current) clearTimeout(snapMsgTimeoutRef.current)
-      snapMsgTimeoutRef.current = setTimeout(() => setSnapMsg(null), 3000)
+      snapMsgTimeoutRef.current = setTimeout(() => {
+        setSnapMsg(null)
+        setSnapMsgType(null)
+      }, 3000)
     }
   }
 
@@ -190,7 +197,7 @@ export default function Dashboard() {
               {snapping ? '...' : '📸 Snapshot'}
             </button>
             {snapMsg && (
-              <span style={{ fontSize: '0.8rem', color: snapMsg.startsWith('Erreur') ? '#ef4444' : '#10b981' }}>
+              <span style={{ fontSize: '0.8rem', color: snapMsgType === 'error' ? '#ef4444' : '#10b981' }}>
                 {snapMsg}
               </span>
             )}
