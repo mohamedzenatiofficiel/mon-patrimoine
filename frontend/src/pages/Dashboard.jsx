@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart,
+  XAxis, YAxis, CartesianGrid, Area, AreaChart,
 } from 'recharts'
 import { getDashboard, getSnapshots, createSnapshot, getCashflow } from '../services/api'
 import CashflowSankey from '../components/CashflowSankey'
@@ -79,9 +79,6 @@ export default function Dashboard() {
   const pea             = data?.pea_value         ?? 0
   const crypto          = data?.crypto_value      ?? 0
   const monthlyExpenses = data?.monthly_expenses  ?? 0
-  const monthlyPassive  = data?.monthly_passive   ?? 0
-  const objective       = data?.objective         ?? 500
-  const progressPct     = Math.min((monthlyPassive / objective) * 100, 100).toFixed(1)
 
   const pieData = [
     { name: 'PEA', value: pea },
