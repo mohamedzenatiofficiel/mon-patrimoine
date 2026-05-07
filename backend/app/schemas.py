@@ -15,12 +15,21 @@ class InvestmentOut(InvestmentCreate):
     class Config: from_attributes = True
 
 class ExpenseCreate(BaseModel):
-    category:    str
-    amount:      float
-    date:        date
-    description: Optional[str] = ""
+    category:     str
+    amount:       float
+    date:         date
+    description:  Optional[str] = ""
+    is_recurring: bool = False
 
-class ExpenseOut(ExpenseCreate):
-    id:         int
-    created_at: datetime
+class ExpenseOut(BaseModel):
+    id:            Optional[int] = None
+    category:      str
+    amount:        float
+    date:          date
+    description:   Optional[str] = ""
+    is_recurring:  bool = False
+    recurring_day: Optional[int] = None
+    created_at:    Optional[datetime] = None
+    is_virtual:    bool = False
+    source_id:     Optional[int] = None
     class Config: from_attributes = True
