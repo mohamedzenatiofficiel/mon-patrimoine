@@ -5,7 +5,17 @@
       "Bash(npm install *)",
       "Bash(git commit -m ' *)",
       "Bash(git config *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(docker compose *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\zmoha\\\\Documents\\\\mon-patrimoine\\\\backend\\\\app\\\\routers\" -Filter \"*cashflow*\")",
+      "Bash(node -e ' *)",
+      "Bash(node replace_analysis.js)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:forum.portfolio-performance.info)",
+      "WebFetch(domain:www.ls-tc.de)",
+      "WebFetch(domain:ls-x.de)",
+      "Bash(del \"c:\\\\Users\\\\zmoha\\\\Documents\\\\mon-patrimoine\\\\frontend\\\\src\\\\pages\\\\SimulationsIntelligent.jsx\")"
     ]
   }
 }
