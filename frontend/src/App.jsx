@@ -1,13 +1,17 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import Dashboard    from './pages/Dashboard'
-import Investments  from './pages/Investments'
-import Expenses     from './pages/Expenses'
+import Dashboard   from './pages/Dashboard'
+import Investments from './pages/Investments'
+import Expenses    from './pages/Expenses'
+import Cashflow    from './pages/Cashflow'
+import Simulations from './pages/Simulations'
 import './App.css'
 
 const NAV = [
-  { to: '/',            icon: '⊞',  label: 'Dashboard'       },
-  { to: '/investments', icon: '📈', label: 'Investissements'  },
-  { to: '/expenses',    icon: '💸', label: 'Dépenses'        },
+  { to: '/',             icon: '⊞',  label: 'Dashboard'       },
+  { to: '/budget',       icon: '💶', label: 'Budget'          },
+  { to: '/investments',  icon: '📈', label: 'Investissements'  },
+  { to: '/expenses',     icon: '💸', label: 'Dépenses'        },
+  { to: '/simulations',  icon: '🔢', label: 'Simulateur'      },
 ]
 
 export default function App() {
@@ -15,7 +19,7 @@ export default function App() {
     <BrowserRouter>
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <span className="logo-gem">◈</span>
+          <div className="logo-gem">◈</div>
           <span>Mon Patrimoine</span>
         </div>
 
@@ -39,9 +43,11 @@ export default function App() {
       <main className="page-content">
         <Routes>
           <Route path="/"            element={<Dashboard />}   />
+          <Route path="/budget"      element={<Cashflow />}    />
           <Route path="/investments" element={<Investments />} />
           <Route path="/expenses"    element={<Expenses />}    />
-<Route path="*"            element={<Navigate to="/" replace />} />
+          <Route path="/simulations" element={<Simulations />} />
+          <Route path="*"            element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </BrowserRouter>

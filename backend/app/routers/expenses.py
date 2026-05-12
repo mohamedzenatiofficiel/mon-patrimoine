@@ -17,6 +17,7 @@ def _make_virtual(exp: Expense, year: int, month: int) -> dict:
     return {
         "id": None,
         "category": exp.category,
+        "subcategory": exp.subcategory,
         "amount": exp.amount,
         "date": occ_date,
         "description": exp.description,
@@ -58,10 +59,19 @@ def list_expenses(
     )
     return results
 
+@router.get("/recurring", response_model=List[ExpenseOut])
+def list_recurring_expenses(db: Session = Depends(get_db)):
+    return (
+        db.query(Expense)
+        .filter(Expense.is_recurring == True)
+        .order_by(Expense.recurring_day)
+        .all()
+    )
+
 @router.post("", response_model=ExpenseOut)
 def create_expense(data: ExpenseCreate, db: Session = Depends(get_db)):
     data_dict = data.model_dump()
-    if data_dict["is_recurring"]:
+    if data_dict["is_recurring"] and not data_dict.get("recurring_day"):
         data_dict["recurring_day"] = data.date.day
     exp = Expense(**data_dict)
     db.add(exp)
@@ -84,6 +94,12 @@ def update_expense(exp_id: int, data: ExpenseCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(exp)
     return exp
+
+@router.delete("/all")
+def delete_all_expenses(db: Session = Depends(get_db)):
+    deleted = db.query(Expense).delete()
+    db.commit()
+    return {"deleted": deleted}
 
 @router.delete("/{exp_id}")
 def delete_expense(exp_id: int, db: Session = Depends(get_db)):
